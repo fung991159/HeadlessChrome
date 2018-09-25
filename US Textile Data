@@ -1,0 +1,42 @@
+const puppeteer = require('puppeteer');
+
+puppeteer.launch({headless: false}).then(async browser => {
+//   puppeteer.launch({headless: true}).then(async browser => {
+  const page = await browser.newPage();
+  await page.goto('https://otexa.trade.gov/scripts/tqads2.exe/htspage');
+
+
+//Navigate to HS Code Table
+const hsCodeInputBox_SELECTOR = '#content > center:nth-child(4) > table > tbody > tr:nth-child(1) > td:nth-child(3) > form > textarea'
+const hSCodeSubmit_SELECTOR = '#content > center:nth-child(4) > table > tbody > tr:nth-child(2) > td > input[type="submit"]:nth-child(2)'
+const USD_SELECTOR = '#content > center:nth-child(4) > table > tbody > tr:nth-child(1) > td.tex10 > input[type="radio"]:nth-child(3)'
+
+await page.click(hsCodeInputBox_SELECTOR);
+await page.keyboard.type("6101100000\n6101200010");
+await page.click(USD_SELECTOR);
+
+await page.click(hSCodeSubmit_SELECTOR);
+
+await page.waitForNavigation();
+
+//Scrape Data from HS Code Table
+const Value_SELECTOR = "body > table > tbody > tr:nth-child(INDEX) > td:nth-child(6)"
+
+
+// //index start with 1
+for (let i = 1; i <= 10; i++) {
+  let valueSelector = Value_SELECTOR.replace("INDEX", i);
+  
+  let HSvalue = await page.evaluate((sel) => {
+	  let value = document.querySelector(sel)
+     return value? value.innerHTML: null;
+  	}, valueSelector);
+
+    console.log(HSvalue)
+  }
+
+  await browser.close();
+});
+
+
+
