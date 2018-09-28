@@ -1,7 +1,7 @@
 const puppeteer = require('puppeteer');
 
 puppeteer.launch({headless: false}).then(async browser => {
-//   puppeteer.launch({headless: true}).then(async browser => {
+  // puppeteer.launch({headless: true}).then(async browser => {
   const page = await browser.newPage();
   await page.goto('https://otexa.trade.gov/scripts/tqads2.exe/htspage');
 
@@ -14,29 +14,43 @@ const USD_SELECTOR = '#content > center:nth-child(4) > table > tbody > tr:nth-ch
 await page.click(hsCodeInputBox_SELECTOR);
 await page.keyboard.type("6101100000\n6101200010");
 await page.click(USD_SELECTOR);
-
 await page.click(hSCodeSubmit_SELECTOR);
-
-await page.waitForNavigation();
+await page.waitForNavigation({ waitUntil: 'networkidle0'});
 
 //Scrape Data from HS Code Table
-const Value_SELECTOR = "body > table > tbody > tr:nth-child(INDEX) > td:nth-child(6)"
+const Value_SELECTOR = "body > table > tbody > tr:nth-child(INDEX) > td:nth-child(6)";
+let tableRows = await page.$$("body > table > tbody > tr");
 
+// get whole table as array
+const data = await page.evaluate(() => {
+  const tds = Array.from(document.querySelectorAll('.tex10 tr td'))
+  return tds.map(td => td.innerHTML)
+  })
 
-// //index start with 1
-for (let i = 1; i <= 10; i++) {
-  let valueSelector = Value_SELECTOR.replace("INDEX", i);
-  
-  let HSvalue = await page.evaluate((sel) => {
-	  let value = document.querySelector(sel)
-     return value? value.innerHTML: null;
-  	}, valueSelector);
+var dataset = []
+for (let i = 0; i<=data.length; i++) {
+  dataset.push({
+    country: data[i],
+    value: data[i+5]
+  })
+  i += 7;
+}
 
-    console.log(HSvalue)
-  }
+console.log(dataset)
 
+// 
+
+// for (let i = 2; i <= tableRows.length; i++) {
+//   var valueSelector = Value_SELECTOR.replace("INDEX", i);
+//   var HSvalue = await page.evaluate((sel) => {
+// 	  var value = document.querySelector(sel)
+//      return value? value.innerHTML: null;
+//   	}, valueSelector);
+//   dataset.push({
+//     HScode: i, 
+//     HSvalue: HSvalue})
+//   }
+
+//   console.log(dataset) 
   await browser.close();
 });
-
-
-
